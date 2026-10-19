@@ -66,7 +66,11 @@ process.exit(code)
  * already present, which is why it can run unconditionally.
  */
 function ensureBrowsers() {
-  const args = ['playwright', 'install', ...(process.platform === 'linux' ? ['--with-deps'] : []), 'chromium']
+  // No `playwright` element here: this is the Playwright CLI itself, invoked as
+  // `node node_modules/@playwright/test/cli.js install …`. Passing its own name as the first
+  // argument makes it parse "Unknown command" and exit non-zero - which is how this line was
+  // first written, and an agent caught it by actually running the suite.
+  const args = ['install', ...(process.platform === 'linux' ? ['--with-deps'] : []), 'chromium']
   const cli = path.join('node_modules', '@playwright', 'test', 'cli.js')
   console.log(`[e2e] installing the browser: ${args.join(' ')}`)
 
