@@ -19,6 +19,7 @@ import EmbeddedPostgres from 'embedded-postgres'
 const provided = process.env.ConnectionStrings__Default
 if (provided) {
   console.log('[e2e] using the database from ConnectionStrings__Default')
+  await ensureBrowsers()
   process.exit(await run())
 }
 
@@ -42,6 +43,8 @@ await database.initialise()
 await database.start()
 console.log(`[e2e] PostgreSQL ready on port ${port}`)
 
+await ensureBrowsers()
+
 const code = await run({
   ConnectionStrings__Default: `Host=127.0.0.1;Port=${port};Database=postgres;Username=e2e;Password=e2e`,
 })
@@ -49,6 +52,35 @@ const code = await run({
 await database.stop()
 rmSync(dataDir, { recursive: true, force: true })
 process.exit(code)
+
+/**
+ * Installs Playwright's browser if it is not there.
+ *
+ * `@playwright/test` is a dependency, but **the browser is not**: it downloads on first use, and
+ * on a clean CI runner that download had never happened, so the first test died with
+ * `browserType.launch: Executable doesn't exist at ~/.cache/ms-playwright/…`. The product's only
+ * browser-level test could not pass anywhere it had not already been run by hand.
+ *
+ * `--with-deps` installs the system libraries the browser needs; it shells out to the platform's
+ * package manager, so it is passed on Linux only. The install is a no-op when the browser is
+ * already present, which is why it can run unconditionally.
+ */
+function ensureBrowsers() {
+  const args = ['playwright', 'install', ...(process.platform === 'linux' ? ['--with-deps'] : []), 'chromium']
+  const cli = path.join('node_modules', '@playwright', 'test', 'cli.js')
+  console.log(`[e2e] installing the browser: ${args.join(' ')}`)
+
+  const child = spawn(process.execPath, [cli, ...args], { stdio: 'inherit' })
+  return new Promise((resolve) => {
+    child.on('exit', (code) => {
+      if (code !== 0) {
+        console.error(`[e2e] the browser install exited ${code}`)
+        process.exit(code ?? 1)
+      }
+      resolve()
+    })
+  })
+}
 
 /** Runs Playwright and resolves with its exit code. */
 function run(extraEnv = {}) {
