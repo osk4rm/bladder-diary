@@ -11,6 +11,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
 
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
+    public DbSet<Household> Households => Set<Household>();
+
+    public DbSet<Child> Children => Set<Child>();
+
+    public DbSet<Entry> Entries => Set<Entry>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -24,6 +30,43 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.HasOne(s => s.User)
                 .WithMany()
                 .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Household>(entity =>
+        {
+            entity.Property(h => h.Name).HasMaxLength(100).IsRequired();
+            // One household per owner for now. The unique index is the rule, not a
+            // convention: a second row for the same owner is a database error.
+            entity.HasIndex(h => h.OwnerUserId).IsUnique();
+            entity.HasOne(h => h.Owner)
+                .WithMany()
+                .HasForeignKey(h => h.OwnerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Child>(entity =>
+        {
+            entity.Property(c => c.Name).HasMaxLength(100).IsRequired();
+            entity.HasIndex(c => c.HouseholdId);
+            entity.HasOne(c => c.Household)
+                .WithMany()
+                .HasForeignKey(c => c.HouseholdId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<Entry>(entity =>
+        {
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.HasIndex(e => new { e.HouseholdId, e.OccurredAt });
+            entity.HasIndex(e => new { e.ChildId, e.OccurredAt });
+            entity.HasOne(e => e.Household)
+                .WithMany()
+                .HasForeignKey(e => e.HouseholdId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Child)
+                .WithMany()
+                .HasForeignKey(e => e.ChildId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

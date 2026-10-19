@@ -94,6 +94,8 @@ builder.Services.AddSwarmAnalytics(builder.Configuration);
 // Feature flags: unknown means off, so a typo disables rather than enables.
 builder.Services.AddSwarmFeatureFlags();
 builder.Services.AddScoped<SwarmApp.Api.Infrastructure.Billing.IBillingSessionProvider, SwarmApp.Api.Infrastructure.Billing.UnconfiguredBillingSessionProvider>();
+builder.Services.AddScoped<SwarmApp.Api.Infrastructure.Diary.HouseholdProvisioner>();
+builder.Services.AddScoped<SwarmApp.Api.Infrastructure.Diary.DiaryService>();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:5173"];
