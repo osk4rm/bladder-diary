@@ -1,0 +1,39 @@
+{
+  "cookies": [
+    {
+      "name": "XSRF-TOKEN",
+      "value": "eyJpdiI6Inc0U0JVbG5DejRBdXVRcm56SkdIenc9PSIsInZhbHVlIjoiRDltYkkvZ2NxTE5QaFFhaVBOTzJPRnhjV1lMWS9PMWhlUjJPeHJuS05sbk4rZFYyaG56bWhpMEZsVFVNY3ZLQjFobFV2d0J3d0kzUWIxZEc0TTdBUm9saU1wMUcxc0J1K09UMEhkVGlSb2JtRFpFQWJsQkk5ODBPVDhabE51MVYiLCJtYWMiOiJmNWIzMGZkMjIxOTNkMmI1Y2E3NTVkMDBkZjZjYWEzZTZiOTE1MzkxZmU5ZDZmNTVkZDU5YTIxNjYwODVmN2RhIiwidGFnIjoiIn0%3D",
+      "domain": "145.239.86.216",
+      "path": "/",
+      "expires": 1793018811.797393,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "coolify_session",
+      "value": "eyJpdiI6Ik54M01DUDUwUU9LMk1nbUpUUnRkNFE9PSIsInZhbHVlIjoiL0dCTTMzNDBjNll3TldiYzJ0TnVaTWZKdXhsS3hta2owQWlSK2tKc2p0cHpXY1MwcXQxVWo2Q3crallKSVZqOUdZNGxPc3NWb3NNZ2NrbjVqYkFJRHFPdDBzTHRnZ0FBNWNvNHZvcHNwUktlbGRYc2NjNjhwUTMxVGFmdU03MzEiLCJtYWMiOiJjOGJiMTg1YjE0ZWY1OTk4MjczZGM3NDA2Nzg0MzdlYzRlZjAxYWE4Y2Q4YmQ0ZjIxYTE3YTNiYjU0ZGRlMTg3IiwidGFnIjoiIn0%3D",
+      "domain": "145.239.86.216",
+      "path": "/",
+      "expires": 1793018811.797542,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://145.239.86.216:8000",
+      "localStorage": [
+        {
+          "name": "theme",
+          "value": "dark"
+        },
+        {
+          "name": "pusherTransportNonTLS",
+          "value": "{\"timestamp\":1792414012112,\"transport\":\"ws\",\"latency\":178,\"cacheSkipCount\":0}"
+        }
+      ]
+    }
+  ]
+}

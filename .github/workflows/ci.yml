@@ -1,0 +1,60 @@
+name: ci
+
+# One job, and it calls the scripts rather than repeating their commands.
+#
+# The previous version ran `dotnet build`, `dotnet format`, `dotnet test` and four `npm`
+# commands directly, while `scripts/ci/` contained scripts that ran the same things and were
+# documented as the single source of truth. That is drift by construction: a script could break
+# and CI would stay green, because CI never executed it.
+#
+# The check at the top keeps it that way - it fails if a direct `dotnet build/test/format` or
+# `npm run` command reappears in this file.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: CI declares no duplicated commands
+        run: pwsh -File scripts/ci/check-ci-parity.ps1
+
+      - run: dotnet tool restore
+
+      # Gates first: they are cheap, and a destructive migration or an unhardened image is
+      # cheaper to discover before the build than after it.
+      - name: Migration safety (expand/contract)
+        run: pwsh -File scripts/ci/migrations.ps1
+
+      - name: Production compose sanity
+        run: pwsh -File scripts/ci/check-compose.ps1
+
+      - name: Container hardening (no SDK, non-root, healthcheck)
+        run: pwsh -File scripts/ci/check-dockerfile.ps1
+
+      - name: Build (dotnet, then web)
+        run: pwsh -File scripts/ci/build.ps1
+
+      - name: Lint (dotnet format, then web lint)
+        run: pwsh -File scripts/ci/lint.ps1
+
+      - name: Test (dotnet, then web)
+        run: pwsh -File scripts/ci/test.ps1
+
+      - name: End-to-end (real browser, real API, real database)
+        run: npm --prefix apps/web run test:e2e
