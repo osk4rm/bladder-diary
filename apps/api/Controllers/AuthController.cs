@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using SwarmApp.Api.Contracts;
 using SwarmApp.Api.Data;
 using SwarmApp.Api.Infrastructure.Analytics;
+using SwarmApp.Api.Infrastructure.Diary;
 using SwarmApp.Api.Infrastructure.Email;
 
 namespace SwarmApp.Api.Controllers;
@@ -15,6 +16,8 @@ namespace SwarmApp.Api.Controllers;
 public sealed class AuthController(
     UserManager<AppUser> users,
     SignInManager<AppUser> signIn,
+    AppDbContext db,
+    HouseholdProvisioner households,
     IAntiforgery antiforgery,
     IEmailSender email,
     IOptions<EmailOptions> emailOptions,
@@ -42,6 +45,11 @@ public sealed class AuthController(
             DisplayName = request.DisplayName,
         };
 
+        // The household is part of the account, not a follow-up job: if the tenant cannot
+        // be created the user must not exist either. Identity writes through the same
+        // scoped AppDbContext, so its SaveChanges joins this transaction.
+        await using var transaction = await db.Database.BeginTransactionAsync(HttpContext.RequestAborted);
+
         var result = await users.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
@@ -49,6 +57,10 @@ public sealed class AuthController(
         }
 
         await users.AddToRoleAsync(user, DatabaseExtensions.UserRole);
+
+        households.CreateFor(user);
+        await db.SaveChangesAsync(HttpContext.RequestAborted);
+        await transaction.CommitAsync(HttpContext.RequestAborted);
 
         // The account exists but is not confirmed. Signing in is still allowed, because
         // refusing it would lock a user out of their own account if the email never
