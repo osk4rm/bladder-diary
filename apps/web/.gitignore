@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Browser automation state. These files hold live session cookies, and one of them was swept
+# into a new product by the "copy the template" step and committed to a public repository.
+*-state.json
+.auth/
+playwright/.auth/
+
+# Isolated temp/package folders used by scripts/e2e-with-db.mjs
+.tmp/

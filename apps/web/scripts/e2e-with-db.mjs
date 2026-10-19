@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { rmSync } from 'node:fs'
+import { mkdirSync, rmSync } from 'node:fs'
 import path from 'node:path'
 import EmbeddedPostgres from 'embedded-postgres'
 
@@ -56,10 +56,27 @@ function run(extraEnv = {}) {
   // A clean Windows host fails `dotnet run` on a stale, foreign-owned %TEMP%\NuGetScratch
   // lock. Isolating those paths here means the e2e gate works on a machine where nobody has
   // configured anything - which is the only reason a gate gets run.
+  //
+  // They must be **absolute**. NuGet rejects a relative `NUGET_PACKAGES` outright ("Element
+  // NUGET_PACKAGES must contain an absolute path"), and it does so in about two seconds, from
+  // inside the build that `dotnet run` performs on behalf of Playwright. CI therefore reported
+  // "The build failed. Fix the build errors and run again." for a change that had just been
+  // built in the previous step - while the same command worked on a developer machine, because
+  // there `NUGET_PACKAGES` was already set and this fallback never ran.
+  const tmp = path.resolve('.tmp', 'tmp')
   const isolated = {
-    TMP: path.join('.tmp', 'tmp'),
-    TEMP: path.join('.tmp', 'tmp'),
-    NUGET_PACKAGES: process.env.NUGET_PACKAGES ?? path.join('.tmp', 'nuget'),
+    TMP: tmp,
+    TEMP: tmp,
+    // .NET reads TMPDIR on Linux/macOS, not TMP: setting only TMP isolated nothing off Windows.
+    TMPDIR: tmp,
+  }
+  if (process.platform === 'win32' && !process.env.NUGET_PACKAGES) {
+    // Only where the trap exists: forcing a private package folder on CI would re-restore every
+    // package on every run to work around a Windows-only lock.
+    isolated.NUGET_PACKAGES = path.resolve('.tmp', 'nuget')
+  }
+  for (const dir of [isolated.TMP, isolated.NUGET_PACKAGES]) {
+    if (dir) mkdirSync(dir, { recursive: true })
   }
 
   const child = spawn(process.execPath, [cli, 'test', ...process.argv.slice(2)], {
